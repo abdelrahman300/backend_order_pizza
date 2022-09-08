@@ -1,10 +1,12 @@
 from hashlib import new
+from fastapi.responses import JSONResponse
+from sqlite3 import dbapi2
 from xml.sax import default_parser_list
 from fastapi import FastAPI , Depends, HTTPException, status
 from regex import F
 from database import engine,SessionLocal 
-from fun import (find_user,create_new_user,check_if_phone_already_used,check_if_name_already_used,create_new_order)
-import models, schemas
+import models
+from .schemas import (SignUpModel )
 from sqlalchemy.orm import Session
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -14,37 +16,50 @@ def get_db():
         yield db
     finally:
         db.close()
-@app.post('/create_user',status_code=status.HTTP_201_CREATED)
-def create_user(user:schemas.SignUpModel,db: Session = Depends(get_db)):
-    check_if_phone_already_used(models.user.phone, Session= Depends(get_db))
 
-    check_if_name_already_used(user.username, Session= Depends(get_db))
+@app.post('/create/user',status_code=status.HTTP_201_CREATED)
+def create_user(user:SignUpModel,db: Session = Depends(get_db)):
+    user_phone = db.query(models.User).filter(models.User.phone==user.phone).first()
+    if  user_phone:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this email already exists"
+        )
+    user_name = db.query(models.User).filter(models.User.name==user.name).first()
 
-    new_user =create_new_user(models.user.name,models. user.phone)
-
-    db.Session.add(new_user)
-    db.Session.commit()
-    db.refresh(new_user)
-    return {'message':'Success! You\'ve just signed up!'}
-
+    if user_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User with this username already exists"
+        )
 
 
+    new_user = models.User(
+        name = user.name,
+        Phone = user.phone,
+    )   
+
+    db.add(new_user)
+    db.commit()
+    return {'user':new_user}
 
 
-@app.post('/creat_order')
+@app.post('/creat/order',status_code=status.HTTP_404_NOT_FOUND)
 def create_order(order:schemas.OrderModel,user:schemas.create_order_user,db:Session = Depends(get_db)):
-    user_find= find_user(models.User.name,Session = Depends(get_db))
+    user_find= db.query(models.User ).filter(models.User.id).first()
     if not user_find:
-            raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Invalid Username or Password")
-    new_order =create_new_order(models.order.pizza_size,models.order.quantitiy)
-    Session.add(new_order)
-    Session.commit()
-    return {'message':'order created'}
-@app.get('/get_order/{id}')
+        raise HTTPException(status_code=404, detail="Item not found")
+    new_order = models.OrderDetails(
+        pizza_size = order.pizza_size,
+        quantity = order.quantity
+    )
+    db.Session.add(new_order)
+    db.Session.commit()
+    db.refresh(new_order)
+    return  JSONResponse(content=order, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+@app.get('/get_order/{id}',status_code=status.HTTP_404_NOT_FOUND)
 def get_order(id:int,db:Session =Depends(get_db)):
-    order = Session.query(models.Order).filter(models.Order.id == id).first()
+    order = db.query(models.Order).filter(models.Order.id == id).first()
     if not order:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -53,20 +68,51 @@ def get_order(id:int,db:Session =Depends(get_db)):
     
     return order
 @app.put('/update_order/{id}')
-def update(id:int,Session=Depends(get_db)):
-    order_to_update= Session.query(models.Order).filter(models.Order.id == id).first()
-    #user = session.query(User).filter(User.username == current_user).first()
+def update(id:int,db: Session = Depends(get_db)):
+    order_to_update=db.query(models.Order).filter(models.Order.id == id).first()
+    order_status = db.query(models.Order).filter(models.OrderDetails.ORDER_STATUSES)
+    if order_status =='IN-TRANSIT':
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order Done")
+        
     if not order_to_update:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Order with the given ID doesn't exist"
         )
 
-    order_to_update.quantity = models.Order.quantity
-    order_to_update.pizza_size =models.models. Order.pizza_size
-
-    Session.commit()
+    order_to_update.quantity = models.OrderDetails.quantity
+    order_to_update.pizza_size =models.OrderDetails.pizza_size
+    db.add(order_to_update.quantity, order_to_update.pizza_size)
+    db.Session.commit()
+    db.Session.refresh(order_to_update.quantity, order_to_update.pizza_size)
 
     return order_to_update
         
+@app.delete('/delete')
+def Delete_order(id:int,db: Session = Depends(get_db)):
+    del_order= db.query(models.Order).filter(models.Order.id == id).first()
+    order_status = db.query(models.Order).filter(models.OrderDetails.ORDER_STATUSES)
+    if order_status =='IN-TRANSIT':
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order Done"
+        )
+    if not del_order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order with the given ID doesn't exist"
+        )
+    db.Session.delete(del_order)
+    db.Session.commit()   
+    return 'Your order has deleted'
+@app.get('/all')
+def list_all_orders(db:Session = Depends(get_db)):
 
+    orders = db.query(models.OrderDetails).all()
+
+    if not orders:
+        return {"message":"No orders were made yet"}
+
+    return orders

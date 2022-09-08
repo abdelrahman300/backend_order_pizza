@@ -1,11 +1,11 @@
-from fastapi import HTTPException, status
+"""from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 import models
 
 
 
 
-def check_if_phone_already_used(user_phone: str, session: Session):
+def check_if_phone_already_used(user_phone: str,session:Session):
     db_phone = session.query(models.User).filter(models.User.phone==user_phone).first()
 
     if db_phone:
@@ -35,14 +35,13 @@ def create_new_order(pizza_size: str, quantity: int, user: models.User):
         quantity = quantity
     )
     new_order.models.User = user
-    return new_order
-def find_current_user( session: Session):
+    return new_orderdef find_current_user( session: Session):
 
     user = session.query(models.User).filter(models.User.name == current_user).first()
 
     return user
-def find_user(user_username: str, session: Session):
+def find_user(user_username: str, session : Session):
     
     db_user = session.query(models.User).filter(models.User.name==user_username).first()
 
-    return db_user
+    return db_user"""

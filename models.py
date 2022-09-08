@@ -13,13 +13,12 @@ class User(Base):
     name = Column(String, unique=True)
     phone = Column(String,unique=True)
 
-    orders = relationship('OrderDetils','Order', back_populates='user')
+   # orders = relationship('OrderDetils','Order', back_populates='user')
 
     
 
 class Order(Base):
     __tablename__ = 'Order'
-
     id = Column( Integer, Identity(start=1, cycle=True), primary_key=True)
 class OrderDetails(Base):
     ORDER_STATUSES = (
@@ -35,13 +34,11 @@ class OrderDetails(Base):
         ('EXTRA-LARGE', 'Extra-Large')
     )
 
-    __tablename__ = 'Order_details'
+    __tablename__ = 'Orders'
 
-    #id =Column ( Integer, Identity(start=1, cycle=True), primary_key=True)
-    name =Column(String,unique=True)
-    quantitiy = Column(Integer, nullable=False)
+    name = Column(String, primary_key=True)
+    quantity = Column(Integer, nullable=False)
     order_status = Column(ChoiceType(choices=ORDER_STATUSES), default="PENDING")
     pizza_size = Column(ChoiceType(choices=PIZZA_SIZES), default="SMALL")
-    id = Column(Integer, ForeignKey('User.id'))
-
-    user = relationship('User', back_populates='OrderDetails')
+    user_id = Column(Integer, ForeignKey('User.id'))
+   # user = relationship('User', back_populates='OrderDetails')
