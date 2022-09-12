@@ -2,7 +2,15 @@
 from sqlalchemy.orm import Session
 import models
 
-
+def response_order(id: int, quantity: int, pizza_size: str, order_status: str,order_location):
+    
+    response = {
+        "quantity": quantity,
+        "pizzuvicorn main:appa_size": pizza_size,
+        "order_status": order_status,
+        "order_location":order_location
+    }
+    return 
 
 
 def check_if_phone_already_used(user_phone: str,session:Session):

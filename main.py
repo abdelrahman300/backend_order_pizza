@@ -1,6 +1,8 @@
+import enum
 from gettext import find
 from hashlib import new
 from lib2to3.pgen2.token import NAME
+from webbrowser import get
 from fastapi.encoders import jsonable_encoder
 from socket import fromfd
 from fastapi.responses import JSONResponse
@@ -14,7 +16,7 @@ from database.schemas import *
 from sqlalchemy.orm import Session
 import sys
 
-Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(engine)
 
 app = FastAPI()
 def get_db():
@@ -24,24 +26,11 @@ def get_db():
     finally:
         db.close()
 
-
-
-def response_order(id: int, quantity: int, pizza_size: str, order_status: str,order_location):
-    
-    response = {
-        "quantity": quantity,
-        "pizzuvicorn main:appa_size": pizza_size,
-        "order_status": order_status,
-        "order_location":order_location
-    }
-    return response
-
-
 #create user
 @app.post('/create/user',status_code=status.HTTP_201_CREATED)
-def create_user(add_user:SignUpModel , db: Session = Depends(get_db)):
+def create_user(add_user:create , db: Session = Depends(get_db)):
         try:   
-                user_phone = db.query(user).filter(user.phone==add_user.phone).first()
+                user_phone = db.query(user).filter(user.phone ==add_user.phone ).first()
                 if  user_phone:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,130 +43,162 @@ def create_user(add_user:SignUpModel , db: Session = Depends(get_db)):
                         detail="User with this name already exists"
                         )
                 new_user = user()
-                new_user.name = add_user.name,
-                new_user.Phone = add_user.phone, 
+                new_user.name= add_user.name
+                new_user.phone  = add_user.phone  
                 db.add(new_user)
                 db.commit()
+                # db.refresh(new_user)
                 
-                return {'detail':'Your account created',
-                'Your_id':new_user.id}#
+                return {'detail':'Your acoount created',
+                'Your_id':new_user.id}
         except Exception as err:
             return {'name':str(err),'Descritption':sys.exc_info()[1]}
+
+
+
+
+
+
+
 #Create order
 
-@app.post('/creat/order',status_code=status.HTTP_404_NOT_FOUND)
-def create_order(user_:create_order_user,order:OrderModel,db:Session = Depends(get_db)):
-    user_find= db.query(user).filter(user.phone==user_.phone).first()
-    if not user_find:
-        raise HTTPException(status_code=404, detail="You have to create account")
-    new_order = orderDetails()
-    new_order.name=order.name
-    new_order.pizza_size = order.pizza_size,
-    new_order.order_status=order.order_status,
-    new_order.quantity = order.quantity
-    new_order.location=order.location
-    db.add(new_order)
-    db.commit()
-    #db.refresh(new_order)
-    return jsonable_encoder(
-        response_order(
-         new_order.quantity, new_order.pizza_size, new_order.order_status,new_order.location
-        ))
-
-# #to get order by id
-
-# @app.post('/creat/order',status_code=status.HTTP_404_NOT_FOUND)
-# def create_order(user_:create_order_user,order:OrderModel,db:Session = Depends(get_db)):
-#     user_find= db.query(user).filter(user.phone==user_.phone).first()
-#     if not user_find:
-#         raise HTTPException(status_code=404, detail="You have to create account")
-#     new_order = OrderDetails()
-#     new_order.name=order.name
-#     new_order.pizza_size = order.pizza_size,
-#     new_order.quantity = order.quantity
-    
-#     db.add(new_order)
-#     db.commit()
-#     #db.refresh(new_order)
-#     return jsonable_encoder(
-#         response_order(
-#          new_order.quantity, new_order.pizza_size, new_order.order_status,new_order.location
-#         ))
-
-# #to get order by id
-# @app.get('/get_order/{id}',status_code=status.HTTP_404_NOT_FOUND)
-# def get_order(id:int,db:Session =Depends(get_db)):
-#     find_user= db.query(user).filter(user.id==id)
-#     if not find_user:
-#         raise HTTPException(status_code=404, detail=f"You ID {id} not found ")
-#     find_order = db.query(OrderDetails).filter(OrderDetails.id == id).filter(OrderDetails.id==user.get(id)).first()
-#     if not find_order:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail=f"Order with the given ID{id} doesn't exist"
-#         )
-    
-#     return jsonable_encoder(find_order)
-# #get all orders
-# @app.get('/all')
-# def list_all_orders(db:Session = Depends(get_db)):
-
-#     orders = db.query(OrderDetails).all()
-
-#     if not orders:
-#         return {"message":"No orders were made yet"}
-
-#     orders =db.query(order).all()
-
-
-#     return jsonable_encoder(orders)
-# @app.put('/update_order/{id}')
-# def update(id:int,db: Session = Depends(get_db)):
-#     order_to_update=db.query(order).filter(order.id == id).first()
-#     user_id=db.query(user).filter(id==user.get(id))
-#     order_status = db.query(OrderDetails).filter(OrderDetails.order_status)
-#     if not order_status in ['PENDING', 'IN-TRANSIT', 'DELIVERED']:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Wrong order status, available statuses are: PENDING, IN-TRANSIT, DELIVERED"
-#     )    
+@app.post('/creat/order',status_code=status.HTTP_201_CREATED)
+def create_order(order:createorder,db:Session = Depends(get_db)):
+    try:
+            new_user= db.query(user).filter(order.phone==user.phone).first()
+            if  not new_user:
+               raise HTTPException(status_code=404, detail="You have to create account")
+            #    add_new=user()
+            #    add_new.name='XXXXXXXXX'
+            #    add_new.phone=order.phone
+            #    db.add(add_new)
         
-#     if not order_to_update:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Order with the given ID doesn't exist"
-#         )
+            new_order = orderDetails()
+            new_order.name=order.name
+            new_order.quantity = order.quantity
+            new_order.order_status=order.order_status
+            new_order.pizza_size = order. pizza_size
+            new_order.location=order.location
+            #new_order.Owner_id=
+            #error here
+            db.add(new_order)
+            db.commit()
+            # db.refresh(new_order)
+            return {"message":f"your order created"}
+    except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[1]}
 
-#     order_to_update.quantity = OrderDetails.quantity
-#     order_to_update.pizza_size =OrderDetails.pizza_size
-#     db.commit()
-#     #db.refresh(order_to_update.quantity, order_to_update.pizza_size)
 
-#     return jsonable_encoder(
-#         response_order(
-#          order_to_update.quantity, order_to_update.pizza_size, order_to_update.order_status
-#         ))  
+# # #to get order by id
+@app.get('/get_order/{id}')
+def get_order(id:int,db:Session =Depends(get_db)):
+    try:
+        find_user= db.query(orderDetails).filter(orderDetails.id==id)
+        if not find_user:
+            raise HTTPException(status_code=404, detail=f"You iD {id} not found ")
+        find_order = db.query(orderDetails).filter(orderDetails.id == id).first()
+        if not find_order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Order with the given iD{id} doesn't exist"
+            )
         
-# @app.delete('/delete/{id}')
-# def Delete_order(id:int,db: Session = Depends(get_db)):
-#     del_order= db.query(order).filter(order.id == id).first()
-#     if not order:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Order with the given ID doesn't exist"
-#         )
-#     order_status = db.query(OrderDetails).filter(OrderDetails.order_status)
-   
-#     if not order_status in ['PENDING', 'IN-TRANSIT', 'DELIVERED']:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Wrong order status, available statuses are: PENDING, IN-TRANSIT, DELIVERED"
-#     )    
-#     if not del_order:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="Order with the given ID doesn't exist"
-#         )
-#     db.delete(del_order)
-#     db.commit()   
-#     return 'Your order has deleted'
+        return {'name':find_order.name,'id':find_order.id,'quantity':find_order.quantity,'size':find_order.pizza_size}
+
+    except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[2]}
+ 
+# # #get all orders/
+@app.get('/all/users')
+def list_all_orders(db:Session = Depends(get_db)):
+    try:
+        users = db.query(user).all()
+        if not users:
+            return {"message":"No users"}
+        return users
+    except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[1]}
+
+
+@app.get('/number/of/orders')
+def list_all_orders(db:Session = Depends(get_db)):
+    try:
+        view_orders = db.query(orderDetails).count()
+        if not view_orders:
+            return {"message":"No orders"}
+        return view_orders
+    except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[1]}
+
+@app.get('/all/orders')
+def list_all_orders(db:Session = Depends(get_db)):
+    try:
+        orders = db.query(orderDetails).all
+        if not orders:
+            return {"message":"No orders"}
+        return orders
+    except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[1]}
+
+
+
+
+
+
+
+@app.put('/update_order/{id}')
+def update(id:int,db: Session = Depends(get_db)):
+    try:
+        order_to_update=db.query(orderDetails).filter(orderDetails.Owner_id == id).first()
+        order_status = db.query(orderDetails).filter(orderDetails.order_status)
+        if  order_status in orderDetails.PIZZA_SIZES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sorry ,Your order has Done"
+        )    
+            
+        if not order_to_update:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Order with the given ID{id} doesn't exist"
+            )
+
+        order_to_update.quantity = orderDetails.quantity
+        order_to_update.pizza_size =orderDetails.pizza_size
+        db.commit()
+        db.refresh(order_to_update.quantity, order_to_update.pizza_size)
+        return {'message ':'Update hasDone'}
+        
+    except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[1]}    
+
+
+
+
+@app.delete('/delete/{id}')
+def Delete_order(id:int,db: Session = Depends(get_db)):
+        try: 
+            del_order= db.query(orderDetails).filter(orderDetails.id == id).first()
+            if not del_order:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Order with the given ID doesn't exist"
+                )
+            order_status = db.query(orderDetails).filter(orderDetails.order_status)
+        
+            if  order_status in orderDetails.PIZZA_SIZES:
+                  raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sorry ,Your order has Done"
+        )    
+            if not del_order:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Order with the given ID doesn't exist"
+                )
+            db.delete(del_order)
+            db.commit()   
+            return {"message":'Your order has deleted'}
+        except Exception as err:
+            return {'name':str(err),'Descritption':sys.exc_info()[1]}
+
