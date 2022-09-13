@@ -29,19 +29,13 @@ class orderDetails(Base):
         ('IN-TRANSIT', 'in-Transit'),
         ('DELIVERED', 'delivered')
     )
-    PIZZA_SIZES = (
-        ('SMALL', 'small'),
-        ('MEDIUM', 'medium'),
-        ('LARGE', 'large'),
-        ('EXTRA-LARGE', 'extra-large')
-    )
     __tablename__ = 'orders_detail'
     #error here
     id=Column(  Integer, Identity(start=1, cycle=True), primary_key=True)
     name = Column(String,unique=True)
     quantity = Column(Integer, nullable=False)
     order_status = Column(ChoiceType(choices=ORDER_STATUSES), default="PENDING")
-    pizza_size = Column(ChoiceType(choices=PIZZA_SIZES), default="SMALL")
+    pizza_size = Column(String, default="SMALL")
     location =Column(String)
     Owner_id = Column(Integer, ForeignKey('users.id'))
     Owner = relationship('user', back_populates='orders_detail')

@@ -49,7 +49,6 @@ def create_user(add_user:create , db: Session = Depends(get_db)):
                 new_user.phone  = add_user.phone  
                 db.add(new_user)
                 db.commit()
-                # db.refresh(new_user)
                 
                 return {'detail':'Your acoount created',
                 'Your_id':new_user.id}
@@ -68,14 +67,8 @@ def create_user(add_user:create , db: Session = Depends(get_db)):
 def create_order(order:createorder,db:Session = Depends(get_db)):
     try:
             new_user= db.query(user).filter(order.phone==user.phone).first()
-            #x=db.query(user).filter_by(user.phone=='order.phone' )
             if  not new_user:
                raise HTTPException(status_code=404, detail="You have to create account")
-            #    add_new=user()
-            #    add_new.name='XXXXXXXXX'
-            #    add_new.phone=order.phone
-            #    db.add(add_new)
-            #x=db.query(user).get( new_user.id)
             new_order = orderDetails()
             new_order.name=order.name
             new_order.quantity = order.quantity
@@ -83,10 +76,9 @@ def create_order(order:createorder,db:Session = Depends(get_db)):
             new_order.pizza_size = order. pizza_size
             new_order.location=order.location
             new_order.Owner_id=new_user.id
-            #error here
+
             db.add(new_order)
             db.commit()
-            # db.refresh(new_order)
             return {"message":f"your order created"}
     except Exception as err:
             return {'name':str(err),'Descritption':sys.exc_info()[1]}
@@ -155,7 +147,7 @@ def update(id:int,new:update,db: Session = Depends(get_db)):
             )
        
         order_status = db.query(orderDetails).filter(orderDetails.order_status)
-        if  order_status in orderDetails.PIZZA_SIZES:
+        if  order_status == 'PENDING':
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Sorry ,Your order has Done"
@@ -180,19 +172,18 @@ def update(id:int,new:update,db: Session = Depends(get_db)):
 def Delete_order(id:int,db: Session = Depends(get_db)):
         try:   
             del_order=  db.query(orderDetails).filter(orderDetails.id == id).first()
-            
+
             if not del_order:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Order with the given ID doesn't exist"
                 )
             order_status = db.query(orderDetails).filter(orderDetails.order_status)
-        
-            if  order_status in orderDetails.PIZZA_SIZES:
-                  raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Sorry ,Your order has Done"
-        )    
+            if  order_status == 'PENDING':
+                raise HTTPException(
+                   status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Sorry ,Your order has Done"
+        ) 
             if not del_order:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
