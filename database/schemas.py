@@ -1,3 +1,4 @@
+from statistics import quantiles
 from typing import Optional
 from unicodedata import name
 from pydantic import BaseModel, Field
@@ -33,6 +34,11 @@ class createorder(BaseModel):
     class Config:
         orm_mode = True
        
-       
-       
-     
+class update(BaseModel):
+    id:int
+    name:Optional[str] 
+    quantity:Optional[int] =Field(gt=0)
+    quantity: int =Field(gt=0) 
+    order_status:str = "PENDING" 
+    pizza_size: str ='Small'
+    location :str

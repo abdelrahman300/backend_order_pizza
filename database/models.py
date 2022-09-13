@@ -1,6 +1,7 @@
 from ast import Index
 from enum import unique
 from operator import index
+import string
 from unicodedata import name
 from sqlalchemy import Column, ForeignKey, Integer, String,Identity, true
 from sqlalchemy.orm import relationship
@@ -40,7 +41,7 @@ class orderDetails(Base):
     name = Column(String,unique=True)
     quantity = Column(Integer, nullable=False)
     order_status = Column(ChoiceType(choices=ORDER_STATUSES), default="PENDING")
-    pizza_size = Column(ChoiceType(choices=PIZZA_SIZES), default="SMALL")
+    pizza_size = Column(String, default="SMALL")
     location =Column(String)
     Owner_id = Column(Integer, ForeignKey('users.id'))
     Owner = relationship('user', back_populates='orders_detail')

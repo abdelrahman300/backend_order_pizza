@@ -2,6 +2,7 @@ import enum
 from gettext import find
 from hashlib import new
 from lib2to3.pgen2.token import NAME
+from re import X
 from webbrowser import get
 from fastapi.encoders import jsonable_encoder
 from socket import fromfd
@@ -66,20 +67,21 @@ def create_user(add_user:create , db: Session = Depends(get_db)):
 def create_order(order:createorder,db:Session = Depends(get_db)):
     try:
             new_user= db.query(user).filter(order.phone==user.phone).first()
+            #x=db.query(user).filter_by(user.phone=='order.phone' )
             if  not new_user:
                raise HTTPException(status_code=404, detail="You have to create account")
             #    add_new=user()
             #    add_new.name='XXXXXXXXX'
             #    add_new.phone=order.phone
             #    db.add(add_new)
-        
+            #x=db.query(user).get( new_user.id)
             new_order = orderDetails()
             new_order.name=order.name
             new_order.quantity = order.quantity
             new_order.order_status=order.order_status
             new_order.pizza_size = order. pizza_size
             new_order.location=order.location
-            #new_order.Owner_id=
+            new_order.Owner_id=new_user.id
             #error here
             db.add(new_order)
             db.commit()
@@ -93,18 +95,17 @@ def create_order(order:createorder,db:Session = Depends(get_db)):
 @app.get('/get_order/{id}')
 def get_order(id:int,db:Session =Depends(get_db)):
     try:
-        find_user= db.query(orderDetails).filter(orderDetails.id==id)
-        if not find_user:
-            raise HTTPException(status_code=404, detail=f"You iD {id} not found ")
-        find_order = db.query(orderDetails).filter(orderDetails.id == id).first()
-        if not find_order:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Order with the given iD{id} doesn't exist"
-            )
-        
-        return {'name':find_order.name,'id':find_order.id,'quantity':find_order.quantity,'size':find_order.pizza_size}
-
+       
+        find_user= db.query(user).filter(user.id==id).first()
+        # if not find_user:
+        #     raise HTTPException(status_code=404, detail=f"You iD {id} not found ")
+        find_order = db.query(orderDetails).filter_by(orderDetails.Owner_id == id)   
+        # if not find_order:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         detail=f"Order with the given iD{id} doesn't exist"
+        #     )
+        return find_order
     except Exception as err:
             return {'name':str(err),'Descritption':sys.exc_info()[2]}
  
@@ -133,7 +134,7 @@ def list_all_orders(db:Session = Depends(get_db)):
 @app.get('/all/orders')
 def list_all_orders(db:Session = Depends(get_db)):
     try:
-        orders = db.query(orderDetails).all
+        orders = db.query(orderDetails).all()
         if not orders:
             return {"message":"No orders"}
         return orders
@@ -147,9 +148,15 @@ def list_all_orders(db:Session = Depends(get_db)):
 
 
 @app.put('/update_order/{id}')
-def update(id:int,db: Session = Depends(get_db)):
+def update(new:update,db: Session = Depends(get_db)):
     try:
-        order_to_update=db.query(orderDetails).filter(orderDetails.Owner_id == id).first()
+        order_update=db.query(orderDetails).filter(orderDetails.Owner_id == new.id).first()
+        if not order_update:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Order with the given ID{id} doesn't exist"
+            )
+        
         order_status = db.query(orderDetails).filter(orderDetails.order_status)
         if  order_status in orderDetails.PIZZA_SIZES:
             raise HTTPException(
@@ -157,16 +164,11 @@ def update(id:int,db: Session = Depends(get_db)):
                 detail="Sorry ,Your order has Done"
         )    
             
-        if not order_to_update:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Order with the given ID{id} doesn't exist"
-            )
-
-        order_to_update.quantity = orderDetails.quantity
-        order_to_update.pizza_size =orderDetails.pizza_size
+        order_update.quantity =new.quantity
+        order_update.pizza_size =new.pizza_size
+        order_update.name=new.name
+        order_update.order_status=new.order_status
         db.commit()
-        db.refresh(order_to_update.quantity, order_to_update.pizza_size)
         return {'message ':'Update hasDone'}
         
     except Exception as err:
@@ -178,7 +180,7 @@ def update(id:int,db: Session = Depends(get_db)):
 @app.delete('/delete/{id}')
 def Delete_order(id:int,db: Session = Depends(get_db)):
         try: 
-            del_order= db.query(orderDetails).filter(orderDetails.id == id).first()
+            del_order= db.query(orderDetails).filter(orderDetails.id == id).all()
             if not del_order:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
