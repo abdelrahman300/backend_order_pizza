@@ -3,6 +3,7 @@ from gettext import find
 from hashlib import new
 from lib2to3.pgen2.token import NAME
 from re import X
+import re
 from webbrowser import get
 from fastapi.encoders import jsonable_encoder
 from socket import fromfd
@@ -16,7 +17,7 @@ from database.models import *
 from database.schemas import *
 from sqlalchemy.orm import Session
 import sys
-
+#from fastapi.encoders import jsonable_encoder
 Base.metadata.create_all(engine)
 
 app = FastAPI()
@@ -95,19 +96,15 @@ def create_order(order:createorder,db:Session = Depends(get_db)):
 @app.get('/get_order/{id}')
 def get_order(id:int,db:Session =Depends(get_db)):
     try:
-       
-        find_user= db.query(user).filter(user.id==id).first()
-        # if not find_user:
-        #     raise HTTPException(status_code=404, detail=f"You iD {id} not found ")
-        find_order = db.query(orderDetails).filter_by(orderDetails.Owner_id == id)   
-        # if not find_order:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_404_NOT_FOUND,
-        #         detail=f"Order with the given iD{id} doesn't exist"
-        #     )
+        find_order = db.query(orderDetails).filter(orderDetails.id == id).first()
+        if not find_order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Order with the given iD{id} doesn't exist"
+            )
         return find_order
     except Exception as err:
-            return {'name':str(err),'Descritption':sys.exc_info()[2]}
+        return {'name':str(err),'Descritption':sys.exc_info()[1]}
  
 # # #get all orders/
 @app.get('/all/users')
@@ -148,28 +145,30 @@ def list_all_orders(db:Session = Depends(get_db)):
 
 
 @app.put('/update_order/{id}')
-def update(new:update,db: Session = Depends(get_db)):
+def update(id:int,new:update,db: Session = Depends(get_db)):
     try:
-        order_update=db.query(orderDetails).filter(orderDetails.Owner_id == new.id).first()
+        order_update=db.query(orderDetails).filter(orderDetails.id==id)
         if not order_update:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Order with the given ID{id} doesn't exist"
             )
-        
+       
         order_status = db.query(orderDetails).filter(orderDetails.order_status)
         if  order_status in orderDetails.PIZZA_SIZES:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Sorry ,Your order has Done"
         )    
-            
+       
         order_update.quantity =new.quantity
         order_update.pizza_size =new.pizza_size
         order_update.name=new.name
         order_update.order_status=new.order_status
+        order_update.location=new.location
+        order_update.update(new.dict())
         db.commit()
-        return {'message ':'Update hasDone'}
+        return {'message ':'Update has Done'}
         
     except Exception as err:
             return {'name':str(err),'Descritption':sys.exc_info()[1]}    
@@ -179,8 +178,9 @@ def update(new:update,db: Session = Depends(get_db)):
 
 @app.delete('/delete/{id}')
 def Delete_order(id:int,db: Session = Depends(get_db)):
-        try: 
-            del_order= db.query(orderDetails).filter(orderDetails.id == id).all()
+        try:   
+            del_order=  db.query(orderDetails).filter(orderDetails.id == id).first()
+            
             if not del_order:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,

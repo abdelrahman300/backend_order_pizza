@@ -35,10 +35,10 @@ class createorder(BaseModel):
         orm_mode = True
        
 class update(BaseModel):
-    id:int
-    name:Optional[str] 
-    quantity:Optional[int] =Field(gt=0)
+    name:str
     quantity: int =Field(gt=0) 
     order_status:str = "PENDING" 
-    pizza_size: str ='Small'
+    pizza_size:str ='Small'
     location :str
+    class Config:
+        orm_mode = True
