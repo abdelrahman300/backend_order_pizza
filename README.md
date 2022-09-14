@@ -49,12 +49,18 @@ To run any of the examples, copy the code to a file main.py, and start uvicorn w
 
 
 
+## URLs and action preformed over this URL
+
+| Route | Verb(s) | Middleware | Description |
+| ------------- | ------------- | ------------- | ------------- |
+| create/user | POST | val:create | Create a User and return id |
+| /create/order | post | val:createorder | Check the current user_phone logged in |
+| /order_by_id | GET | - | check about id and return all details about this order|
+| /update_order/id| PuT | ,val:id,val:update| check about id and do updates |
+| /all/users | GET | - | return all users |
 
 
-
-
-
-
+ 
 
 
 
