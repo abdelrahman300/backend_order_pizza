@@ -58,6 +58,7 @@ To run any of the examples, copy the code to a file main.py, and start uvicorn w
 | /order_by_id | GET | - | check about id and return all details about this order|
 | /update_order/id| PuT | ,val:id,val:update| check about id and do updates |
 | /all/users | GET | - | return all users |
+| /delete/{id}| Delete | val:id | check about id and return your order deleted 
 
 
  
