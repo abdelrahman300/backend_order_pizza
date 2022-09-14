@@ -10,6 +10,7 @@
 App  Order pizza  build with FastAPI,Python.
 FastAPI provides the backend environment for this application .
 FastAPI is a modern, fast (high-performance), web framework for building APIs with Python 3.6+ based on standard Python type hints.
+This APP is designed so that the customer can place an order online, follow up on the order, and perform some operations on it
 
 
 ## FastAPI Documentation
