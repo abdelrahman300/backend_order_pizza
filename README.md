@@ -43,7 +43,7 @@ To run any of the examples, copy the code to a file main.py, and start uvicorn w
 
 ## APP file structure 
 
-
+![drawSQL-export-2022-09-13_11_47](https://user-images.githubusercontent.com/62572088/190031820-2c1985f4-5e91-42a9-aaec-1e0a8eda32bd.png)
 
 
 
