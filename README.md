@@ -26,7 +26,8 @@ FastAPI is a modern, fast (high-performance), web framework for building APIs wi
    know you work locally and after every excute code have to do:
     * $git add .
     * $git commit -m "name of commit "
-    * $git push origin <branch name>
+    * $git push origin <branch name#>
+     to be communictae with every code
 
 
 ## Install Dependencies
